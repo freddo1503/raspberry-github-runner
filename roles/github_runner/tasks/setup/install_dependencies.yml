@@ -1,0 +1,14 @@
+---
+- name: Update package lists
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install dependencies
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  loop:
+    - curl
+    - tar
+    - jq

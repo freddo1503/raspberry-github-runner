@@ -5,3 +5,13 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = []
+
+[dependency-groups]
+dev = [
+    "ansible-lint>=6.8.7",
+    "pre-commit>=3.5.0",
+]
+
+[tool.ansible-lint]
+warn_list = ["experimental"]
+skip_list = ["role-name", "no-changed-when"]

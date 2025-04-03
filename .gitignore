@@ -1,1 +1,4 @@
 /.idea/
+/.ansible_vault_pass
+/secrets.yml
+/.ansible/

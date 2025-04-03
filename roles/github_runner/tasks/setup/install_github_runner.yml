@@ -1,0 +1,28 @@
+- name: Create main runner directory
+  file:
+    path: "{{ base_directory }}"
+    state: directory
+    owner: github
+    group: github
+    mode: '0755'
+
+- name: Download GitHub runner tar once per host
+  shell: |
+    curl -o actions-runner-linux-{{ runner_architecture }}-{{ github_runner_version }}.tar.gz \
+         -L https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-{{ runner_architecture }}-{{ github_runner_version }}.tar.gz
+  args:
+    chdir: '{{ base_directory }}'
+    creates: '{{ base_directory }}/actions-runner-linux-{{ runner_architecture }}-{{ github_runner_version }}.tar.gz'
+
+- name: Validate runner archive
+  shell: echo "{{ github_runner_hash }} actions-runner-linux-{{ runner_architecture }}-{{ github_runner_version }}.tar.gz" | sha256sum --check
+  args:
+    chdir: '{{ base_directory }}'
+  register: hash_check
+  failed_when: "'OK' not in hash_check.stdout"
+
+- name: Extract GitHub runner binaries
+  shell: tar xzf actions-runner-linux-{{ runner_architecture }}-{{ github_runner_version }}.tar.gz
+  args:
+    chdir: '{{ base_directory }}'
+    creates: '{{ base_directory }}/run.sh'

@@ -1,0 +1,7 @@
+---
+- name: Setup GitHub Runners on Raspberry Pi
+  hosts: github_runners
+  vars_files:
+    - secrets.yml
+  roles:
+    - github_runner

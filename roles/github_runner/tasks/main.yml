@@ -1,0 +1,3 @@
+---
+- name: Setup github runner
+  import_tasks: setup/main.yml
