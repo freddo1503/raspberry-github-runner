@@ -1,0 +1,72 @@
+---
+- name: Install Zsh package
+  package:
+    name: zsh
+    state: present
+  become: yes  # This uses sudo to install the package
+
+- name: Check if Oh My Zsh is already installed
+  stat:
+    path: "/home/{{ ansible_user }}/.oh-my-zsh"
+  register: oh_my_zsh_installed
+
+- name: Debug - curl test for Oh My Zsh installer
+  shell: curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/omz-install.sh
+  register: curl_result
+  failed_when: false
+  when: not oh_my_zsh_installed.stat.exists
+
+- name: Install Oh My Zsh manually
+  shell: |
+    cd /home/{{ ansible_user }}
+    git clone https://github.com/ohmyzsh/ohmyzsh.git .oh-my-zsh
+    cp .oh-my-zsh/templates/zshrc.zsh-template .zshrc
+  args:
+    creates: "/home/{{ ansible_user }}/.oh-my-zsh"
+  when: not oh_my_zsh_installed.stat.exists
+
+- name: Clone zsh-autosuggestions plugin
+  git:
+    repo: https://github.com/zsh-users/zsh-autosuggestions.git
+    dest: "/home/{{ ansible_user }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+    update: no
+
+- name: Clone zsh-syntax-highlighting plugin
+  git:
+    repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+    dest: "/home/{{ ansible_user }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+    update: no
+
+- name: Create .zshrc with plugins
+  copy:
+    dest: "/home/{{ ansible_user }}/.zshrc"
+    content: |
+      export ZSH="/home/{{ ansible_user }}/.oh-my-zsh"
+      ZSH_THEME="agnoster"
+      plugins=(git z zsh-autosuggestions zsh-syntax-highlighting)
+      source $ZSH/oh-my-zsh.sh
+
+      # History settings
+      HISTFILE=/home/{{ ansible_user }}/.zsh_history
+      HISTSIZE=10000
+      SAVEHIST=10000
+
+      # Aliases
+      alias ll="ls -lah"
+      alias gs="git status"
+
+      # Editor
+      export EDITOR=vim
+
+      # Enable auto-completion
+      autoload -U compinit
+      compinit
+
+      # Add custom paths
+      export PATH="/home/{{ ansible_user }}/bin:/usr/local/bin:$PATH"
+
+- name: Set Zsh as default shell
+  user:
+    name: "{{ ansible_user }}"
+    shell: /bin/zsh
+  become: yes

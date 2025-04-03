@@ -1,3 +1,4 @@
 - import_tasks: install_dependencies.yml
 - import_tasks: install_docker.yml
 - import_tasks: install_github_runner.yml
+- import_tasks: install_oh_my_zsh.yml
