@@ -2,3 +2,4 @@
 /.ansible_vault_pass
 /secrets.yml
 /.ansible/
+/.env
