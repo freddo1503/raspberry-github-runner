@@ -1,0 +1,24 @@
+---
+- name: "Check if service script exists for runner"
+  ansible.builtin.stat:
+    path: "{{ runner_path }}/svc.sh"
+  register: svc_script_check
+
+- name: "Fail if service script is missing"
+  ansible.builtin.fail:
+    msg: "The svc.sh script is missing after registration in {{ runner_path }}"
+  when: not svc_script_check.stat.exists
+
+- name: "Install runner as a service on {{ inventory_hostname }}"
+  ansible.builtin.command:
+    cmd: ./svc.sh install
+    chdir: "{{ runner_path }}"
+  become: true
+  changed_when: false
+
+- name: "Start runner service on {{ inventory_hostname }}"
+  ansible.builtin.command:
+    cmd: ./svc.sh start
+    chdir: "{{ runner_path }}"
+  become: true
+  changed_when: false

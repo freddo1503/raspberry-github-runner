@@ -1,0 +1,24 @@
+---
+- name: "Check if runner directory exists for GitHub repository {{ github_repo }}"
+  ansible.builtin.stat:
+    path: "{{ base_repositories_directory }}/{{ github_repo }}"
+  register: dest_folder_stat
+
+- name: "Create runner directory for {{ github_repo }}"
+  ansible.builtin.file:
+    path: "{{ base_repositories_directory }}/{{ github_repo }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: not dest_folder_stat.stat.exists
+
+- name: "Copy runner files for {{ github_repo }}"
+  ansible.builtin.copy:
+    src: "{{ base_directory }}/"
+    dest: "{{ base_repositories_directory }}/{{ github_repo }}/"
+    remote_src: true
+    mode: "0755"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  when: not dest_folder_stat.stat.exists

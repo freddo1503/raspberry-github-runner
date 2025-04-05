@@ -1,23 +1,24 @@
 ---
 - name: Install Zsh package
-  package:
+  ansible.builtin.package:
     name: zsh
     state: present
-  become: yes  # This uses sudo to install the package
+  become: true # This uses sudo to install the package
 
 - name: Check if Oh My Zsh is already installed
-  stat:
+  ansible.builtin.stat:
     path: "/home/{{ ansible_user }}/.oh-my-zsh"
   register: oh_my_zsh_installed
 
-- name: Debug - curl test for Oh My Zsh installer
-  shell: curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/omz-install.sh
-  register: curl_result
-  failed_when: false
+- name: Download Oh My Zsh installer
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: /tmp/omz-install.sh
+    mode: '0755'
   when: not oh_my_zsh_installed.stat.exists
 
 - name: Install Oh My Zsh manually
-  shell: |
+  ansible.builtin.shell: |
     cd /home/{{ ansible_user }}
     git clone https://github.com/ohmyzsh/ohmyzsh.git .oh-my-zsh
     cp .oh-my-zsh/templates/zshrc.zsh-template .zshrc
@@ -26,20 +27,23 @@
   when: not oh_my_zsh_installed.stat.exists
 
 - name: Clone zsh-autosuggestions plugin
-  git:
+  ansible.builtin.git:
     repo: https://github.com/zsh-users/zsh-autosuggestions.git
     dest: "/home/{{ ansible_user }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
-    update: no
+    version: "master"  # Or better, use a specific tag for stability
+    update: false
 
 - name: Clone zsh-syntax-highlighting plugin
-  git:
+  ansible.builtin.git:
     repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
     dest: "/home/{{ ansible_user }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
-    update: no
+    version: "master"  # Or better, use a specific tag for stability
+    update: false
 
 - name: Create .zshrc with plugins
-  copy:
+  ansible.builtin.copy:
     dest: "/home/{{ ansible_user }}/.zshrc"
+    mode: '0644'
     content: |
       export ZSH="/home/{{ ansible_user }}/.oh-my-zsh"
       ZSH_THEME="agnoster"
@@ -66,7 +70,7 @@
       export PATH="/home/{{ ansible_user }}/bin:/usr/local/bin:$PATH"
 
 - name: Set Zsh as default shell
-  user:
+  ansible.builtin.user:
     name: "{{ ansible_user }}"
     shell: /bin/zsh
-  become: yes
+  become: true

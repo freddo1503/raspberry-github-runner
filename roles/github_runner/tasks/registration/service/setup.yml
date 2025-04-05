@@ -1,0 +1,24 @@
+---
+- name: "Check if service script exists for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.stat:
+    path: "{{ base_repositories_directory }}/{{ github_repo }}/svc.sh"
+  register: svc_script_check
+
+- name: "Fail if service script is missing for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.fail:
+    msg: "The svc.sh script is missing after registration in {{ base_repositories_directory }}/{{ github_repo }}"
+  when: not svc_script_check.stat.exists
+
+- name: "Install runner service for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.command:
+    cmd: ./svc.sh install
+    chdir: "{{ base_repositories_directory }}/{{ github_repo }}"
+  become: true
+  changed_when: false
+
+- name: "Start runner service for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.command:
+    cmd: ./svc.sh start
+    chdir: "{{ base_repositories_directory }}/{{ github_repo }}"
+  become: true
+  changed_when: false

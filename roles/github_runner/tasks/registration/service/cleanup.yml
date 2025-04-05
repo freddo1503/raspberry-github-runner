@@ -1,0 +1,21 @@
+---
+- name: "Check if service file exists for {{ github_username }}/{{ github_repo }} on {{ inventory_hostname }}"
+  ansible.builtin.stat:
+    path: "/etc/systemd/system/actions.runner.{{ github_username }}-{{ github_repo }}.{{ inventory_hostname }}.service"
+  register: service_check
+
+- name: "Stop and remove existing runner service for {{ github_username }}/{{ github_repo }} on {{ inventory_hostname }}"
+  when: service_check.stat.exists
+  block:
+    - name: "Stop runner service for {{ github_username }}/{{ github_repo }} on {{ inventory_hostname }}"
+      ansible.builtin.systemd:
+        name: "actions.runner.{{ github_username }}-{{ github_repo }}.{{ inventory_hostname }}.service"
+        state: stopped
+        enabled: false
+      become: true
+
+    - name: "Remove service file for {{ github_username }}/{{ github_repo }} on {{ inventory_hostname }}"
+      ansible.builtin.file:
+        path: "/etc/systemd/system/actions.runner.{{ github_username }}-{{ github_repo }}.{{ inventory_hostname }}.service"
+        state: absent
+      become: true

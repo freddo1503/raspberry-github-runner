@@ -1,0 +1,45 @@
+---
+- name: "Generate GitHub token for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.command:
+    cmd: >-
+      python3 {{ playbook_dir }}/scripts/get_github_repo_tokens.py
+      --repos {{ github_repo }}
+      --token {{ github_pat }}
+      --username {{ github_username }}
+      --output /tmp/github_repo_tokens.json
+  register: token_generation
+  delegate_to: localhost
+  run_once: true
+  changed_when: false
+
+- name: "Load token for repository {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.slurp:
+    src: /tmp/github_repo_tokens.json
+  register: tokens_file_content
+  delegate_to: localhost
+  run_once: true
+
+- name: "Set token variable for repository {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.set_fact:
+    github_repo_token: "{{ (tokens_file_content.content | b64decode | from_json)[github_repo] }}"
+
+- name: "Register runner to {{ github_username }}/{{ github_repo }} with labels: {{ runners[inventory_hostname]['labels'] }}"
+  ansible.builtin.command:
+    cmd: >-
+      ./config.sh
+      --url https://github.com/{{ github_username }}/{{ github_repo }}
+      --token {{ github_repo_token }}
+      --labels {{ runners[inventory_hostname]['labels'] }}
+      --unattended
+    chdir: "{{ base_repositories_directory }}/{{ github_repo }}"
+    creates: "{{ base_repositories_directory }}/{{ github_repo }}/.runner"
+  become: false
+  become_user: github
+
+- name: "Clean up tokens file for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.file:
+    path: /tmp/github_repo_tokens.json
+    state: absent
+  delegate_to: localhost
+  run_once: true
+  changed_when: false

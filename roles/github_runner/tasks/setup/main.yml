@@ -1,4 +1,12 @@
-- import_tasks: install_dependencies.yml
-- import_tasks: install_docker.yml
-- import_tasks: install_github_runner.yml
-- import_tasks: install_oh_my_zsh.yml
+---
+- name: Import dependency installation tasks
+  ansible.builtin.import_tasks: install_dependencies.yml
+
+- name: Import Docker installation tasks
+  ansible.builtin.import_tasks: install_docker.yml
+
+- name: Import Oh My Zsh installation tasks
+  ansible.builtin.import_tasks: install_oh_my_zsh.yml
+
+- name: Import GitHub Runner installation tasks
+  ansible.builtin.import_tasks: install_github_runner.yml

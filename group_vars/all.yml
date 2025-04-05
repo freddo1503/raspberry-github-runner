@@ -1,4 +1,6 @@
+---
 base_directory: "/home/github/actions-runner"
+base_repositories_directory: "/home/github/repositories"
 github_runner_version: "2.323.0"
 github_username: "freddo1503"
 runner_architecture: "arm64"

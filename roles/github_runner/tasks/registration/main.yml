@@ -1,0 +1,9 @@
+---
+- name: Process each repository for this runner
+  ansible.builtin.include_tasks: repository_tasks.yml
+  loop: "{{ runners[inventory_hostname]['repositories'] }}"
+  loop_control:
+    loop_var: github_repo
+  tags:
+    - registration
+    - github_runner

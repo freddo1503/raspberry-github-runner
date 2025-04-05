@@ -1,0 +1,5 @@
+---
+- name: "Import cleanup tasks for {{ github_repo }}"
+  ansible.builtin.import_tasks: cleanup.yml
+- name: "Import setup tasks for {{ github_repo }}"
+  ansible.builtin.import_tasks: setup.yml

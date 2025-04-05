@@ -25,7 +25,3 @@ docs = [
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.6.11",
 ]
-
-[tool.ansible-lint]
-warn_list = ["experimental"]
-skip_list = ["role-name", "no-changed-when"]

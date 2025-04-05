@@ -1,3 +1,9 @@
 ---
 - name: Setup github runner
-  import_tasks: setup/main.yml
+  ansible.builtin.import_tasks: setup/main.yml
+
+- name: Register github runner
+  ansible.builtin.import_tasks: registration/main.yml
+  tags:
+    - registration
+    - github_runner

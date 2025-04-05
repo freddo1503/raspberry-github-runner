@@ -1,7 +1,7 @@
 ---
 - name: Update package lists
   ansible.builtin.apt:
-    update_cache: yes
+    update_cache: true
 
 - name: Install dependencies
   ansible.builtin.apt:

@@ -1,0 +1,13 @@
+---
+- name: "Setting up runner for repository {{ github_username }}/{{ github_repo }} on {{ inventory_hostname }}"
+  ansible.builtin.debug:
+    msg: "Setting up runner for repository: {{ github_repo }}"
+
+- name: "Prepare environment for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.import_tasks: prepare_environment.yml
+
+- name: "Register runner for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.import_tasks: register_runner.yml
+
+- name: "Setup service for {{ github_username }}/{{ github_repo }}"
+  ansible.builtin.import_tasks: service/main.yml
