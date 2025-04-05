@@ -21,6 +21,10 @@ dev = [
     "pre-commit>=3.5.0",
     "pytest>=8.3.5",
 ]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.11",
+]
 
 [tool.ansible-lint]
 warn_list = ["experimental"]

@@ -3,3 +3,4 @@
 /secrets.yml
 /.ansible/
 /.env
+/site/
