@@ -1,0 +1,48 @@
+name: Run Ansible Playbook
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ansible-playbook:
+    runs-on: self-hosted
+    container:
+      image: python:3.12
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Ansible vault password file
+        run: |
+          install -m 600 /dev/null ~/.ansible_vault_pass
+          printf "%s" "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .ansible_vault_pass
+
+      - name: Setup SSH directory
+        run: mkdir -p /home/github/.ssh
+
+      - name: Install SSH private key
+        run: |
+          printf "%s" "${{ secrets.SSH_PRIVATE_KEY }}" > /home/github/.ssh/emerson-runner
+          chmod 600 /home/github/.ssh/emerson-runner
+
+      - name: Add host to known hosts
+        run: ssh-keyscan -t ed25519 emerson >> /home/github/.ssh/known_hosts
+
+      - name: Test SSH connection
+        run: ssh -i /home/github/.ssh/emerson-runner -o UserKnownHostsFile=/home/github/.ssh/known_hosts github@emerson whoami
+
+      - name: Decode secrets.yml
+        run: |
+          printf "%s" "${{ secrets.ANSIBLE_SECRETS }}" | base64 -d > secrets.yml
+
+      - name: Install uv package manager
+        run: pip install uv
+
+      - name: Install dependencies with uv
+        run: uv sync
+
+      - name: Run Ansible playbook
+        run: uv run ansible-playbook site.yml
