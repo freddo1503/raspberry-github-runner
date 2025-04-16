@@ -47,3 +47,16 @@
   ansible.builtin.apt:
     name: docker-ce
     state: present
+
+- name: Check if the current user is in the Docker group
+  ansible.builtin.command:
+    cmd: id -nG "{{ ansible_user }}"
+  register: user_groups
+  failed_when: false
+
+- name: Add current user to the Docker group
+  ansible.builtin.command:
+    cmd: usermod -aG docker "{{ ansible_user }}"
+  when: "'docker' not in user_groups.stdout.split()"
+  changed_when: true
+
