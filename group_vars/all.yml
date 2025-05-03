@@ -12,3 +12,4 @@ runners:
     repositories:
       - "portfolio"
       - "lexigram"
+      - "mcp-server-legifrance"
