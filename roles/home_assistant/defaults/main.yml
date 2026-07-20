@@ -6,6 +6,13 @@ home_assistant_container_name: "homeassistant"
 home_assistant_port: 8123
 home_assistant_timezone: "Europe/Paris"
 
+# Home Assistant only listens on its own port, so a browser pointed at a bare
+# hostname lands on port 80 and fails. This redirects port 80 to the real port
+# so `http://homeassistant.local/` works without typing the port.
+home_assistant_http_redirect_enabled: true
+home_assistant_http_redirect_image: "nginx:alpine"
+home_assistant_http_redirect_container_name: "homeassistant-http-redirect"
+
 # Published over mDNS so the instance is reachable by name on the LAN
 # instead of by the Raspberry Pi's DHCP address.
 home_assistant_mdns_enabled: true

@@ -19,3 +19,15 @@ services:
     volumes:
       - ./config:/config
       - /etc/localtime:/etc/localtime:ro
+{% if home_assistant_http_redirect_enabled | bool %}
+
+  http-redirect:
+    container_name: {{ home_assistant_http_redirect_container_name }}
+    image: {{ home_assistant_http_redirect_image }}
+    restart: unless-stopped
+    # Host networking so it can claim port 80 on the LAN address directly,
+    # matching how Home Assistant itself is exposed.
+    network_mode: host
+    volumes:
+      - ./redirect.conf:/etc/nginx/conf.d/default.conf:ro
+{% endif %}

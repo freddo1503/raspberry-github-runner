@@ -1,0 +1,15 @@
+# Managed by Ansible (roles/home_assistant). Local edits will be overwritten.
+#
+# mDNS resolves names to addresses only, it carries no port. A browser given a
+# bare hostname therefore tries port 80, where Home Assistant is not listening.
+# This sends it to the real port, preserving the host the user actually typed
+# so both homeassistant.local and the IP address work.
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    # $host is the requested name without its port, so appending the port here
+    # produces the correct target whichever name was used to get here.
+    return 301 http://$host:{{ home_assistant_port }}$request_uri;
+}

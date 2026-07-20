@@ -26,6 +26,16 @@
     mode: "0644"
   become: true
 
+- name: Deploy port 80 redirect configuration
+  ansible.builtin.template:
+    src: redirect.conf.j2
+    dest: "{{ home_assistant_base_directory }}/redirect.conf"
+    owner: "{{ home_assistant_user }}"
+    group: "{{ home_assistant_user }}"
+    mode: "0644"
+  when: home_assistant_http_redirect_enabled | bool
+  become: true
+
 - name: Start Home Assistant
   community.docker.docker_compose_v2:
     project_src: "{{ home_assistant_base_directory }}"
@@ -39,6 +49,13 @@
     port: "{{ home_assistant_port }}"
     host: 127.0.0.1
     timeout: 180
+
+- name: Wait for the port 80 redirect to accept connections
+  ansible.builtin.wait_for:
+    port: 80
+    host: 127.0.0.1
+    timeout: 60
+  when: home_assistant_http_redirect_enabled | bool
 
 - name: Publish Home Assistant over mDNS
   when: home_assistant_mdns_enabled | bool
