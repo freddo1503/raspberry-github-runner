@@ -1,0 +1,15 @@
+[Unit]
+# Managed by Ansible (roles/home_assistant). Local edits will be overwritten.
+Description=Publish {{ home_assistant_mdns_hostname }} over mDNS
+Requires=avahi-daemon.service
+After=avahi-daemon.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ha-mdns-alias.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

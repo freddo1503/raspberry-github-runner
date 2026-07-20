@@ -1,7 +1,12 @@
 ---
-- name: Setup GitHub Runners on Raspberry Pi
+- name: Configure Raspberry Pi services
   hosts: github_runners
   vars_files:
     - secrets.yml
   roles:
-    - github_runner
+    - role: github_runner
+      tags:
+        - github_runner
+    - role: home_assistant
+      tags:
+        - home_assistant

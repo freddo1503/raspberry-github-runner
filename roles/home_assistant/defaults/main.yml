@@ -1,0 +1,13 @@
+---
+home_assistant_user: "{{ ansible_user }}"
+home_assistant_base_directory: "/home/{{ ansible_user }}/homeassistant"
+home_assistant_image: "ghcr.io/home-assistant/home-assistant:stable"
+home_assistant_container_name: "homeassistant"
+home_assistant_port: 8123
+home_assistant_timezone: "Europe/Paris"
+
+# Published over mDNS so the instance is reachable by name on the LAN
+# instead of by the Raspberry Pi's DHCP address.
+home_assistant_mdns_enabled: true
+home_assistant_mdns_hostname: "homeassistant.local"
+home_assistant_mdns_display_name: "Home Assistant on %h"

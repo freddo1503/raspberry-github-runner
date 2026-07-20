@@ -1,0 +1,18 @@
+#!/bin/sh
+# Managed by Ansible (roles/home_assistant). Local edits will be overwritten.
+#
+# Publishes an extra mDNS hostname pointing at this machine's primary IPv4
+# address, so Home Assistant answers to {{ home_assistant_mdns_hostname }}
+# as well as to the Raspberry Pi's own hostname. avahi-publish runs in the
+# foreground and holds the record for as long as the process lives, which is
+# why systemd keeps it running rather than treating it as a one-shot.
+set -eu
+
+primary_ipv4="$(ip -4 -oneline route get 1.1.1.1 | sed -n 's/.* src \([0-9.]*\).*/\1/p')"
+
+if [ -z "$primary_ipv4" ]; then
+    echo "ha-mdns-alias: could not determine primary IPv4 address" >&2
+    exit 1
+fi
+
+exec avahi-publish -a -R "{{ home_assistant_mdns_hostname }}" "$primary_ipv4"

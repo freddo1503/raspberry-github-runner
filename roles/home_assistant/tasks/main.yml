@@ -1,0 +1,93 @@
+---
+- name: Create Home Assistant project directory
+  ansible.builtin.file:
+    path: "{{ home_assistant_base_directory }}"
+    state: directory
+    owner: "{{ home_assistant_user }}"
+    group: "{{ home_assistant_user }}"
+    mode: "0755"
+  become: true
+
+- name: Create Home Assistant configuration directory
+  ansible.builtin.file:
+    path: "{{ home_assistant_base_directory }}/config"
+    state: directory
+    owner: "{{ home_assistant_user }}"
+    group: "{{ home_assistant_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy Home Assistant compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ home_assistant_base_directory }}/compose.yaml"
+    owner: "{{ home_assistant_user }}"
+    group: "{{ home_assistant_user }}"
+    mode: "0644"
+  become: true
+
+- name: Start Home Assistant
+  community.docker.docker_compose_v2:
+    project_src: "{{ home_assistant_base_directory }}"
+    state: present
+    pull: missing
+    remove_orphans: true
+  become: true
+
+- name: Wait for Home Assistant to accept connections
+  ansible.builtin.wait_for:
+    port: "{{ home_assistant_port }}"
+    host: 127.0.0.1
+    timeout: 180
+
+- name: Publish Home Assistant over mDNS
+  when: home_assistant_mdns_enabled | bool
+  become: true
+  block:
+    - name: Install Avahi
+      ansible.builtin.apt:
+        name:
+          - avahi-daemon
+          - avahi-utils
+        state: present
+        update_cache: true
+
+    - name: Ensure Avahi is running
+      ansible.builtin.systemd:
+        name: avahi-daemon.service
+        state: started
+        enabled: true
+
+    - name: Advertise Home Assistant as an HTTP service
+      ansible.builtin.template:
+        src: avahi-home-assistant.service.j2
+        dest: /etc/avahi/services/home-assistant.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload Avahi daemon
+
+    - name: Deploy mDNS alias publisher script
+      ansible.builtin.template:
+        src: ha-mdns-alias.sh.j2
+        dest: /usr/local/bin/ha-mdns-alias.sh
+        owner: root
+        group: root
+        mode: "0755"
+      notify: Restart mDNS alias publisher
+
+    - name: Deploy mDNS alias publisher service
+      ansible.builtin.template:
+        src: ha-mdns-alias.service.j2
+        dest: /etc/systemd/system/ha-mdns-alias.service
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart mDNS alias publisher
+
+    - name: Enable mDNS alias publisher
+      ansible.builtin.systemd:
+        name: ha-mdns-alias.service
+        state: started
+        enabled: true
+        daemon_reload: true

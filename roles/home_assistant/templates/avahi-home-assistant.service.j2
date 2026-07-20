@@ -1,0 +1,16 @@
+<?xml version="1.0" standalone='no'?><!--*-nxml-*-->
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<!-- Managed by Ansible (roles/home_assistant). Local edits will be overwritten. -->
+<!--
+  Advertises Home Assistant as an HTTP service so it appears in Bonjour/mDNS
+  browsers and in the "Network" view of most file managers, alongside the
+  {{ home_assistant_mdns_hostname }} hostname published by ha-mdns-alias.service.
+-->
+<service-group>
+  <name replace-wildcards="yes">{{ home_assistant_mdns_display_name }}</name>
+  <service>
+    <type>_http._tcp</type>
+    <port>{{ home_assistant_port }}</port>
+    <txt-record>path=/</txt-record>
+  </service>
+</service-group>

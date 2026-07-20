@@ -1,0 +1,21 @@
+---
+# Managed by Ansible (roles/home_assistant). Local edits will be overwritten.
+services:
+  homeassistant:
+    container_name: {{ home_assistant_container_name }}
+    image: {{ home_assistant_image }}
+    restart: unless-stopped
+    # Home Assistant discovers devices over mDNS and SSDP broadcast traffic,
+    # which a bridged Docker network drops. Host networking also binds
+    # {{ home_assistant_port }} directly, so the Ecowitt gateway can POST to it
+    # over plain HTTP with no proxy in between.
+    network_mode: host
+    # Deliberately not privileged. The Pi's onboard Bluetooth adapter is
+    # visible through host networking, and granting Bluetooth capabilities
+    # without BlueZ installed makes the scanner crash-loop. Map specific
+    # devices under `devices:` instead if a USB radio is added later.
+    environment:
+      - TZ={{ home_assistant_timezone }}
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro

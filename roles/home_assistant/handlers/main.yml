@@ -1,0 +1,13 @@
+---
+- name: Restart mDNS alias publisher
+  ansible.builtin.systemd:
+    name: ha-mdns-alias.service
+    state: restarted
+    daemon_reload: true
+  become: true
+
+- name: Reload Avahi daemon
+  ansible.builtin.systemd:
+    name: avahi-daemon.service
+    state: reloaded
+  become: true
