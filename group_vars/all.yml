@@ -13,3 +13,4 @@ runners:
       - "portfolio"
       - "lexigram"
       - "mcp-server-legifrance"
+      - "raspberry-github-runner"

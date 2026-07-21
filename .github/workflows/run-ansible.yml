@@ -1,8 +1,11 @@
 name: Run Ansible Playbook
 
+# Manual-only until a self-hosted runner is registered for THIS repository.
+# The runners on emerson are repo-scoped to other repositories, so push-
+# triggered runs queued forever. Once the playbook has registered a runner
+# for raspberry-github-runner (now listed in group_vars), the push trigger
+# can be restored.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
