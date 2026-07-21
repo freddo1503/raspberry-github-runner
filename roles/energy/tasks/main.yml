@@ -1,0 +1,71 @@
+---
+- name: Check pre-provisioned secret files
+  ansible.builtin.stat:
+    path: "{{ energy_base_directory }}/{{ item }}"
+  loop: "{{ energy_secret_files }}"
+  register: energy_secret_stats
+
+- name: Fail when a secret file is missing
+  ansible.builtin.fail:
+    msg: >-
+      Missing pre-provisioned secret file
+      {{ item.item }} under {{ energy_base_directory }}.
+      See roles/energy/defaults/main.yml for the contract.
+  when: not item.stat.exists
+  loop: "{{ energy_secret_stats.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Create energy project directories
+  ansible.builtin.file:
+    path: "{{ energy_base_directory }}/{{ item }}"
+    state: directory
+    owner: "{{ energy_user }}"
+    group: "{{ energy_user }}"
+    mode: "0755"
+  loop:
+    - mosquitto/config
+    - mosquitto/data
+    - mosquitto/log
+    - myelectricaldata/data
+  become: true
+
+- name: Deploy Mosquitto configuration
+  ansible.builtin.template:
+    src: mosquitto.conf.j2
+    dest: "{{ energy_base_directory }}/mosquitto/config/mosquitto.conf"
+    owner: "{{ energy_user }}"
+    group: "{{ energy_user }}"
+    mode: "0644"
+  become: true
+
+- name: Generate Mosquitto password file when absent
+  ansible.builtin.command:
+    cmd: >-
+      docker run --rm
+      -v {{ energy_base_directory }}/mosquitto/config:/mosquitto/config
+      -v {{ energy_base_directory }}/.mqtt_pass:/run/mqtt_pass:ro
+      --entrypoint sh {{ energy_mosquitto_image }}
+      -c "touch /mosquitto/config/passwd
+      && mosquitto_passwd -b /mosquitto/config/passwd
+      {{ energy_mqtt_username }} \"$(cat /run/mqtt_pass)\"
+      && chmod 0700 /mosquitto/config/passwd"
+    creates: "{{ energy_base_directory }}/mosquitto/config/passwd"
+  become: true
+
+- name: Deploy energy compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ energy_base_directory }}/compose.yaml"
+    owner: "{{ energy_user }}"
+    group: "{{ energy_user }}"
+    mode: "0644"
+  become: true
+
+- name: Start the energy stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ energy_base_directory }}"
+    state: present
+    pull: missing
+    remove_orphans: true
+  become: true

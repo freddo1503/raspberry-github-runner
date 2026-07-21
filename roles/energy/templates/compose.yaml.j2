@@ -1,0 +1,41 @@
+# Managed by Ansible (roles/energy). Local edits will be overwritten.
+#
+# Linky energy tracking chain:
+#   Enedis -> myelectricaldata.fr gateway -> import container
+#   -> MQTT (Mosquitto) -> Home Assistant discovery
+#   -> WebSocket statistics -> Home Assistant Energy dashboard
+services:
+  mosquitto:
+    image: {{ energy_mosquitto_image }}
+    container_name: mosquitto
+    restart: unless-stopped
+    ports:
+      # Home Assistant runs with host networking and reaches the broker
+      # on localhost only; the broker is not exposed to the LAN.
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    networks:
+      - energy
+
+  myelectricaldata:
+    image: {{ energy_myelectricaldata_image }}
+    container_name: myelectricaldata
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    environment:
+      TZ: Europe/Paris
+    volumes:
+      # data/config.yaml is pre-provisioned (holds the Enedis token, the MQTT
+      # password, and a Home Assistant long-lived token). See roles/energy
+      # defaults for the secret-file contract.
+      - ./myelectricaldata/data:/data
+    networks:
+      - energy
+
+networks:
+  energy:
+    name: energy

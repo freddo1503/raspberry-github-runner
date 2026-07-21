@@ -1,0 +1,18 @@
+---
+energy_user: "{{ ansible_user }}"
+energy_base_directory: "/home/{{ ansible_user }}/energy"
+energy_mosquitto_image: "eclipse-mosquitto:latest"
+energy_myelectricaldata_image: "m4dm4rtig4n/myelectricaldata:latest"
+energy_mqtt_username: "ha"
+
+# Secret files pre-provisioned on the host (mode 0600), NOT managed by this
+# role so the repository stays secret-free:
+#   .mqtt_pass      MQTT password for the "ha" user
+#   .enedis_token   MyElectricalData/Enedis consent token
+#   myelectricaldata/data/config.yaml   full import config (embeds both
+#                   secrets plus a Home Assistant long-lived token)
+# Future improvement: move these into the Ansible vault (secrets.yml).
+energy_secret_files:
+  - ".mqtt_pass"
+  - ".enedis_token"
+  - "myelectricaldata/data/config.yaml"

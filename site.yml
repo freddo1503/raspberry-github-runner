@@ -10,3 +10,6 @@
     - role: home_assistant
       tags:
         - home_assistant
+    - role: energy
+      tags:
+        - energy
