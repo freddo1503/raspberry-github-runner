@@ -5,6 +5,11 @@ energy_mosquitto_image: "eclipse-mosquitto:latest"
 energy_myelectricaldata_image: "m4dm4rtig4n/myelectricaldata:latest"
 energy_mqtt_username: "ha"
 
+# The eclipse-mosquitto image drops privileges to this uid/gid before it opens
+# password_file, so the file must be owned by it and not by root. A root-owned
+# file makes the broker exit 13 ("Unable to open pwfile") in a restart loop.
+energy_mosquitto_uid: 1883
+
 # Secret files pre-provisioned on the host (mode 0600), NOT managed by this
 # role so the repository stays secret-free:
 #   .mqtt_pass      MQTT password for the "ha" user

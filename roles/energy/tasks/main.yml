@@ -48,10 +48,23 @@
       --entrypoint sh {{ energy_mosquitto_image }}
       -c "touch /mosquitto/config/passwd
       && mosquitto_passwd -b /mosquitto/config/passwd
-      {{ energy_mqtt_username }} \"$(cat /run/mqtt_pass)\"
-      && chmod 0700 /mosquitto/config/passwd"
+      {{ energy_mqtt_username }} \"$(cat /run/mqtt_pass)\""
     creates: "{{ energy_base_directory }}/mosquitto/config/passwd"
   become: true
+
+# Deliberately unconditional. The task above is creates:-guarded, so it is
+# skipped once the file exists and can never repair a file whose ownership is
+# already wrong. The broker reads password_file only at startup, so a bad mode
+# stays invisible until the next restart, which is how this went unnoticed for
+# 27 days after provisioning.
+- name: Enforce Mosquitto password file ownership
+  ansible.builtin.file:
+    path: "{{ energy_base_directory }}/mosquitto/config/passwd"
+    owner: "{{ energy_mosquitto_uid }}"
+    group: "{{ energy_mosquitto_uid }}"
+    mode: "0600"
+  become: true
+  notify: Restart Mosquitto
 
 - name: Deploy energy compose file
   ansible.builtin.template:

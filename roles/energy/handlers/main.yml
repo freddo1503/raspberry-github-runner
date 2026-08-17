@@ -1,0 +1,7 @@
+---
+- name: Restart Mosquitto
+  community.docker.docker_container:
+    name: mosquitto
+    state: started
+    restart: true
+  become: true
