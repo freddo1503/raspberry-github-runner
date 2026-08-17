@@ -1,8 +1,10 @@
 ---
 - name: Configure Raspberry Pi services
   hosts: github_runners
-  vars_files:
-    - secrets.yml
+  # secrets.yml is deliberately NOT loaded here. A play-level vars_files is
+  # eager and unconditional, and tag filtering happens after variable loading,
+  # so a missing vault blocked every role over one variable that only the
+  # runner registration uses. It is loaded in that role instead.
   roles:
     # First, so the host can recover its own connectivity independently of
     # anything else this playbook installs.

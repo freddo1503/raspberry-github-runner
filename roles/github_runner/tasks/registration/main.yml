@@ -1,4 +1,15 @@
 ---
+# Loaded at role scope rather than as a play-level vars_files, so that roles
+# needing no secrets (energy, net_watchdog) run on a checkout without the
+# Ansible vault. Only github_pat comes from here; runners lives in group_vars.
+- name: Load runner secrets
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/secrets.yml"
+  no_log: true
+  tags:
+    - registration
+    - github_runner
+
 - name: Process each repository for this runner
   ansible.builtin.include_tasks: repository_tasks.yml
   loop: "{{ runners[inventory_hostname]['repositories'] }}"
