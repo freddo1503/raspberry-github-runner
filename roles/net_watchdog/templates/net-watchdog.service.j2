@@ -1,0 +1,9 @@
+[Unit]
+# Managed by Ansible (roles/net_watchdog). Local edits will be overwritten.
+Description=Recover the network when the default gateway is unreachable
+Documentation=file:///usr/local/bin/net-watchdog.sh
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/net-watchdog.sh

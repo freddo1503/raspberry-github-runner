@@ -1,0 +1,14 @@
+[Unit]
+# Managed by Ansible (roles/net_watchdog). Local edits will be overwritten.
+Description=Periodic default-gateway reachability check
+
+[Timer]
+# The boot delay lets DHCP settle before the first check, so a slow lease is
+# not mistaken for a dead network.
+OnBootSec={{ net_watchdog_start_delay }}
+OnUnitActiveSec={{ net_watchdog_interval }}
+AccuracySec=10s
+Unit=net-watchdog.service
+
+[Install]
+WantedBy=timers.target

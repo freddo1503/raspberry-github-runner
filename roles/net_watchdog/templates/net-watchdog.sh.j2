@@ -1,0 +1,75 @@
+#!/bin/sh
+# Managed by Ansible (roles/net_watchdog). Local edits will be overwritten.
+#
+# Recovers the host when it is on the network physically but has no usable
+# route. Written after 2026-08-05, when eth0 flapped five times during a house
+# move and systemd-networkd then sat with carrier but no DHCP lease for 12
+# days. The link was fine; only the DHCP client was wedged, and a power cycle
+# fixed it. This escalates the same way, automatically.
+
+set -eu
+
+STATE_FILE=/run/net-watchdog.failures
+REBOOT_STAMP=/var/lib/net-watchdog/last-reboot
+
+FAILURES_BEFORE_RESTART={{ net_watchdog_failures_before_restart }}
+FAILURES_BEFORE_REBOOT={{ net_watchdog_failures_before_reboot }}
+MIN_UPTIME={{ net_watchdog_min_uptime_seconds }}
+REBOOT_COOLDOWN={{ net_watchdog_reboot_cooldown_seconds }}
+PROBE_TARGET="{{ net_watchdog_probe_target }}"
+
+log() { logger -t net-watchdog "$1"; }
+
+# The gateway is resolved on every run rather than baked in, so the watchdog
+# keeps working across router swaps and address changes.
+if [ -n "$PROBE_TARGET" ]; then
+    target="$PROBE_TARGET"
+else
+    target=$(ip route show default 2>/dev/null | awk '/default/ {print $3; exit}')
+fi
+
+if [ -n "$target" ] && ping -c 2 -W 3 "$target" >/dev/null 2>&1; then
+    rm -f "$STATE_FILE" 2>/dev/null || true
+    exit 0
+fi
+
+failures=$(cat "$STATE_FILE" 2>/dev/null || echo 0)
+failures=$((failures + 1))
+echo "$failures" > "$STATE_FILE"
+
+if [ -z "$target" ]; then
+    log "no default route (consecutive failures: $failures)"
+else
+    log "gateway $target unreachable (consecutive failures: $failures)"
+fi
+
+# Step 1: rebuild the network stack. This alone recovers a wedged DHCP client.
+if [ "$failures" -eq "$FAILURES_BEFORE_RESTART" ]; then
+    log "restarting systemd-networkd"
+    systemctl restart systemd-networkd || log "networkd restart failed"
+    exit 0
+fi
+
+# Step 2: reboot, but never into a loop.
+if [ "$failures" -ge "$FAILURES_BEFORE_REBOOT" ]; then
+    uptime_seconds=$(awk '{print int($1)}' /proc/uptime)
+    if [ "$uptime_seconds" -lt "$MIN_UPTIME" ]; then
+        log "would reboot but uptime is only ${uptime_seconds}s, waiting"
+        exit 0
+    fi
+
+    now=$(date +%s)
+    last=$(cat "$REBOOT_STAMP" 2>/dev/null || echo 0)
+    if [ "$((now - last))" -lt "$REBOOT_COOLDOWN" ]; then
+        log "would reboot but last watchdog reboot was $((now - last))s ago, waiting"
+        exit 0
+    fi
+
+    log "still unreachable after $failures checks, rebooting"
+    mkdir -p "$(dirname "$REBOOT_STAMP")"
+    echo "$now" > "$REBOOT_STAMP"
+    rm -f "$STATE_FILE" 2>/dev/null || true
+    systemctl reboot
+fi
+
+exit 0

@@ -1,0 +1,38 @@
+---
+- name: Deploy network watchdog script
+  ansible.builtin.template:
+    src: net-watchdog.sh.j2
+    dest: /usr/local/bin/net-watchdog.sh
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+  notify: Restart network watchdog timer
+
+- name: Deploy network watchdog service
+  ansible.builtin.template:
+    src: net-watchdog.service.j2
+    dest: /etc/systemd/system/net-watchdog.service
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart network watchdog timer
+
+- name: Deploy network watchdog timer
+  ansible.builtin.template:
+    src: net-watchdog.timer.j2
+    dest: /etc/systemd/system/net-watchdog.timer
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart network watchdog timer
+
+- name: Enable network watchdog timer
+  ansible.builtin.systemd:
+    name: net-watchdog.timer
+    state: started
+    enabled: true
+    daemon_reload: true
+  become: true

@@ -1,0 +1,7 @@
+---
+- name: Restart network watchdog timer
+  ansible.builtin.systemd:
+    name: net-watchdog.timer
+    state: restarted
+    daemon_reload: true
+  become: true

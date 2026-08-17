@@ -4,6 +4,11 @@
   vars_files:
     - secrets.yml
   roles:
+    # First, so the host can recover its own connectivity independently of
+    # anything else this playbook installs.
+    - role: net_watchdog
+      tags:
+        - net_watchdog
     - role: github_runner
       tags:
         - github_runner

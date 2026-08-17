@@ -1,0 +1,22 @@
+---
+# How often the reachability check runs, and how long after boot it starts.
+net_watchdog_interval: "2min"
+net_watchdog_start_delay: "5min"
+
+# Escalation thresholds, counted in consecutive failed checks.
+# With the defaults above: networkd is restarted after ~6 minutes of silence,
+# and the host reboots after ~12 minutes.
+net_watchdog_failures_before_restart: 3
+net_watchdog_failures_before_reboot: 6
+
+# Reboot guards, both in seconds. The host will not reboot until it has been up
+# this long, and will not reboot again until the cooldown has elapsed. Without
+# these a genuinely dead upstream (router unplugged, ISP outage) would put the
+# Pi into an endless reboot loop.
+net_watchdog_min_uptime_seconds: 900
+net_watchdog_reboot_cooldown_seconds: 3600
+
+# Host to probe. Empty means "use the current default gateway", which is
+# correct across router swaps and house moves. Set an explicit address only to
+# test something beyond the gateway.
+net_watchdog_probe_target: ""
