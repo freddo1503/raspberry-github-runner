@@ -17,6 +17,40 @@ pihole_web_port: >-
 # Semicolon-delimited, as FTLCONF_dns_upstreams expects.
 pihole_dns_upstreams: "9.9.9.9;149.112.112.112"
 
+# Orange TV. With the Livebox's DHCP off, the TV box shows error G03 unless
+# two things the Livebox used to provide are reproduced:
+#
+# 1. DNS for private orange.fr names (oras.vci.pgw.orange.fr,
+#    rmstb.stb.orion.itv.orange.fr, ...) that only Orange's own DNS answers;
+#    public resolvers return SERVFAIL. The whole orange.fr zone is forwarded
+#    to the Livebox, so new private names are covered too. Blocklists still
+#    apply, since FTL checks them before forwarding.
+# 2. The Livebox's identity in the DHCP reply: option 125 (vendor-identifying
+#    vendor-specific information, enterprise 3561) with sub-options 4
+#    (manufacturer OUI, from the Livebox MAC), 5 (serial number) and 6
+#    (product class), plus the Livebox as router and DNS server, for the TV
+#    box's MAC only. Serial and product class come from the Livebox API
+#    (DeviceInfo.get); they change if the Livebox is swapped.
+pihole_livebox_address: "192.168.1.1"
+pihole_orange_tv_enabled: true
+pihole_orange_tv_mac: "48:d2:4f:84:48:36"
+pihole_livebox_oui: "3093BC"
+pihole_livebox_serial: "DM1932229001903"
+pihole_livebox_product_class: "Livebox Fibre"
+
+pihole_orange_tv_dnsmasq_lines:
+  - "server=/orange.fr/{{ pihole_livebox_address }}"
+  - "dhcp-host={{ pihole_orange_tv_mac }},set:decodeur"
+  - "dhcp-option=tag:decodeur,option:router,{{ pihole_livebox_address }}"
+  - "dhcp-option=tag:decodeur,option:domain-name,{{ pihole_dns_domain }}"
+  - "dhcp-option=tag:decodeur,option:dns-server,{{ pihole_livebox_address }}"
+  - 'dhcp-option-force=tag:decodeur,vi-encap:3561,4,"{{ pihole_livebox_oui }}"'
+  - 'dhcp-option-force=tag:decodeur,vi-encap:3561,5,"{{ pihole_livebox_serial }}"'
+  - 'dhcp-option-force=tag:decodeur,vi-encap:3561,6,"{{ pihole_livebox_product_class }}"'
+
+# Extra dnsmasq lines (FTLCONF_misc_dnsmasq_lines), one per entry.
+pihole_dnsmasq_lines: "{{ pihole_orange_tv_dnsmasq_lines if pihole_orange_tv_enabled | bool else [] }}"
+
 # The Livebox exposes no setting for the DNS server it hands out, so the only
 # way to make Pi-hole the default for every device is to let Pi-hole be the
 # DHCP server and switch the Livebox's off. Never run both at once.

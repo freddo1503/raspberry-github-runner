@@ -13,6 +13,12 @@ services:
       FTLCONF_webserver_port: "{{ pihole_web_port }}"
       FTLCONF_dns_upstreams: "{{ pihole_dns_upstreams }}"
       FTLCONF_dns_domain_name: "{{ pihole_dns_domain }}"
+{% if pihole_dnsmasq_lines | length > 0 %}
+      FTLCONF_misc_dnsmasq_lines: |-
+{% for line in pihole_dnsmasq_lines %}
+        {{ line }}
+{% endfor %}
+{% endif %}
       FTLCONF_dhcp_active: "{{ pihole_dhcp_enabled | bool | lower }}"
 {% if pihole_dhcp_enabled | bool %}
       FTLCONF_dhcp_start: "{{ pihole_dhcp_start }}"
