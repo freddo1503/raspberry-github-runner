@@ -1,4 +1,11 @@
 ---
+- name: Apply netplan
+  # `netplan generate` validates every file first, so a broken configuration
+  # fails here instead of taking the interface down.
+  ansible.builtin.shell: netplan generate && netplan apply
+  changed_when: true
+  become: true
+
 - name: Restart systemd-resolved
   ansible.builtin.systemd:
     name: systemd-resolved.service

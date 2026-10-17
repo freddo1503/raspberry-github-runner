@@ -1,0 +1,24 @@
+# Managed by Ansible (roles/pihole). Local edits will be overwritten.
+#
+# Overrides the DHCP setting cloud-init wrote in 50-cloud-init.yaml: netplan
+# merges files in lexical order, so this later file wins for the same
+# interface. Pi-hole is the LAN's DHCP server and cannot lease to its own host.
+network:
+  version: 2
+  ethernets:
+    {{ pihole_static_interface }}:
+      dhcp4: false
+      addresses:
+        - {{ pihole_static_address }}
+      routes:
+        - to: default
+          via: {{ pihole_static_gateway }}
+      nameservers:
+        addresses:
+{% for ns in pihole_static_nameservers %}
+          - {{ ns }}
+{% endfor %}
+        search:
+{% for domain in pihole_static_search_domains %}
+          - {{ domain }}
+{% endfor %}

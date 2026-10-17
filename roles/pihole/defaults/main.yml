@@ -17,6 +17,40 @@ pihole_web_port: >-
 # Semicolon-delimited, as FTLCONF_dns_upstreams expects.
 pihole_dns_upstreams: "9.9.9.9;149.112.112.112"
 
+# The Livebox exposes no setting for the DNS server it hands out, so the only
+# way to make Pi-hole the default for every device is to let Pi-hole be the
+# DHCP server and switch the Livebox's off. Never run both at once.
+pihole_dhcp_enabled: true
+pihole_dhcp_start: "192.168.1.10"
+pihole_dhcp_end: "192.168.1.150"
+pihole_dhcp_router: "192.168.1.1"
+pihole_dhcp_netmask: "255.255.255.0"
+pihole_dhcp_lease_time: "24h"
+
+# Static leases, "<mac>,<ip>,<hostname>". emerson is listed even though it
+# configures its address itself (pihole_static_*), so the pool never hands .39
+# to anyone else.
+pihole_dhcp_hosts:
+  - "2c:cf:67:bf:a4:3b,192.168.1.39,emerson"
+  - "00:90:a9:ef:38:fc,192.168.1.10,MyCloudFerrera"
+
+# The Livebox served the .home domain; keeping it means `<host>.home` names and
+# the `home` search domain keep working after the switch.
+pihole_dns_domain: "home"
+
+# A DHCP server cannot lease an address to itself, so the host's own address is
+# configured statically before Pi-hole takes over DHCP. The host resolves
+# through Quad9 directly rather than through Pi-hole, so it can still pull
+# images and repair itself while the container is down.
+pihole_static_interface: "eth0"
+pihole_static_address: "192.168.1.39/24"
+pihole_static_gateway: "192.168.1.1"
+pihole_static_nameservers:
+  - "9.9.9.9"
+  - "149.112.112.112"
+pihole_static_search_domains:
+  - "home"
+
 # Secret file pre-provisioned on the host (mode 0600), NOT managed by this
 # role so the repository stays secret-free:
 #   .webpassword   admin password for the Pi-hole web interface

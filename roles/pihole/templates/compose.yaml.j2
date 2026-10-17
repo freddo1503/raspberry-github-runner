@@ -12,13 +12,31 @@ services:
       TZ: {{ pihole_timezone }}
       FTLCONF_webserver_port: "{{ pihole_web_port }}"
       FTLCONF_dns_upstreams: "{{ pihole_dns_upstreams }}"
+      FTLCONF_dns_domain_name: "{{ pihole_dns_domain }}"
+      FTLCONF_dhcp_active: "{{ pihole_dhcp_enabled | bool | lower }}"
+{% if pihole_dhcp_enabled | bool %}
+      FTLCONF_dhcp_start: "{{ pihole_dhcp_start }}"
+      FTLCONF_dhcp_end: "{{ pihole_dhcp_end }}"
+      FTLCONF_dhcp_router: "{{ pihole_dhcp_router }}"
+      FTLCONF_dhcp_netmask: "{{ pihole_dhcp_netmask }}"
+      FTLCONF_dhcp_leaseTime: "{{ pihole_dhcp_lease_time }}"
+      FTLCONF_dhcp_ipv6: "false"
+      # One static lease per line, as the FTLCONF array examples show.
+      FTLCONF_dhcp_hosts: |-
+{% for host in pihole_dhcp_hosts %}
+        {{ host }}
+{% endfor %}
+{% endif %}
       WEBPASSWORD_FILE: pihole_webpasswd
     secrets:
       - pihole_webpasswd
     volumes:
       - ./etc-pihole:/etc/pihole
-    # DHCP stays on the router, so neither NET_ADMIN nor port 67 is needed.
     cap_add:
+{% if pihole_dhcp_enabled | bool %}
+      # Required by the DHCP server to answer on port 67.
+      - NET_ADMIN
+{% endif %}
       - SYS_NICE
 
 secrets:

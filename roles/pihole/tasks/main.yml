@@ -12,6 +12,37 @@
       See roles/pihole/defaults/main.yml for the contract.
   when: not pihole_password_stat.stat.exists
 
+- name: Configure the host's static address
+  when: pihole_dhcp_enabled | bool
+  become: true
+  block:
+    # Without this, cloud-init may render 50-cloud-init.yaml again on a later
+    # boot. Documented way to stop cloud-init from managing networking.
+    - name: Stop cloud-init from managing the network configuration
+      ansible.builtin.copy:
+        dest: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+        content: |
+          # Managed by Ansible (roles/pihole).
+          network: {config: disabled}
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Deploy the static netplan configuration
+      ansible.builtin.template:
+        src: netplan-static.yaml.j2
+        dest: /etc/netplan/60-pihole-static.yaml
+        owner: root
+        group: root
+        mode: "0600"
+      notify: Apply netplan
+
+    # Applied now, before Pi-hole starts serving DHCP, so the host never asks
+    # its own DHCP server for an address. The address does not change, so the
+    # SSH session survives.
+    - name: Apply the static address now
+      ansible.builtin.meta: flush_handlers
+
 # Ubuntu's systemd-resolved holds 127.0.0.53:53 with its stub listener, which
 # stops FTL from binding port 53. Turning off only the stub keeps resolved
 # running for the host itself, and pointing /etc/resolv.conf at the file
