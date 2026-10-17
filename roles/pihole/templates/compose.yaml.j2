@@ -1,0 +1,26 @@
+---
+# Managed by Ansible (roles/pihole). Local edits will be overwritten.
+services:
+  pihole:
+    container_name: {{ pihole_container_name }}
+    image: {{ pihole_image }}
+    restart: unless-stopped
+    # Host networking, like Home Assistant, so Pi-hole sees each LAN client's
+    # real address in its query log instead of the Docker bridge gateway.
+    network_mode: host
+    environment:
+      TZ: {{ pihole_timezone }}
+      FTLCONF_webserver_port: "{{ pihole_web_port }}"
+      FTLCONF_dns_upstreams: "{{ pihole_dns_upstreams }}"
+      WEBPASSWORD_FILE: pihole_webpasswd
+    secrets:
+      - pihole_webpasswd
+    volumes:
+      - ./etc-pihole:/etc/pihole
+    # DHCP stays on the router, so neither NET_ADMIN nor port 67 is needed.
+    cap_add:
+      - SYS_NICE
+
+secrets:
+  pihole_webpasswd:
+    file: ./{{ pihole_password_file }}

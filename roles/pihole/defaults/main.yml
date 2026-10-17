@@ -1,0 +1,23 @@
+---
+pihole_user: "{{ ansible_user }}"
+pihole_base_directory: "/home/{{ ansible_user }}/pihole"
+pihole_image: "pihole/pihole:latest"
+pihole_container_name: "pihole"
+pihole_timezone: "Europe/Paris"
+
+# Host networking binds the web server straight onto the host, and port 80 is
+# already taken by the Home Assistant redirect (roles/home_assistant), so the
+# admin UI moves to 8080/8443. The trailing "o" marks a port optional, so FTL
+# still starts if one of them is busy; "s" marks HTTPS.
+pihole_http_port: 8080
+pihole_https_port: 8443
+pihole_web_port: >-
+  {{ pihole_http_port }}o,[::]:{{ pihole_http_port }}o,{{ pihole_https_port }}os,[::]:{{ pihole_https_port }}os
+
+# Semicolon-delimited, as FTLCONF_dns_upstreams expects.
+pihole_dns_upstreams: "9.9.9.9;149.112.112.112"
+
+# Secret file pre-provisioned on the host (mode 0600), NOT managed by this
+# role so the repository stays secret-free:
+#   .webpassword   admin password for the Pi-hole web interface
+pihole_password_file: ".webpassword"

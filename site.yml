@@ -20,3 +20,6 @@
     - role: energy
       tags:
         - energy
+    - role: pihole
+      tags:
+        - pihole

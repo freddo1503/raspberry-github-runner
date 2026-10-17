@@ -1,0 +1,89 @@
+---
+- name: Check the pre-provisioned password file
+  ansible.builtin.stat:
+    path: "{{ pihole_base_directory }}/{{ pihole_password_file }}"
+  register: pihole_password_stat
+
+- name: Fail when the password file is missing
+  ansible.builtin.fail:
+    msg: >-
+      Missing pre-provisioned secret file {{ pihole_password_file }}
+      under {{ pihole_base_directory }}.
+      See roles/pihole/defaults/main.yml for the contract.
+  when: not pihole_password_stat.stat.exists
+
+# Ubuntu's systemd-resolved holds 127.0.0.53:53 with its stub listener, which
+# stops FTL from binding port 53. Turning off only the stub keeps resolved
+# running for the host itself, and pointing /etc/resolv.conf at the file
+# resolved writes with the real upstream servers keeps host lookups working.
+- name: Create the systemd-resolved drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Disable the systemd-resolved stub listener
+  ansible.builtin.copy:
+    dest: /etc/systemd/resolved.conf.d/no-stub.conf
+    content: |
+      # Managed by Ansible (roles/pihole). Frees port 53 for Pi-hole.
+      [Resolve]
+      DNSStubListener=no
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart systemd-resolved
+
+- name: Point resolv.conf at the upstream servers instead of the stub
+  ansible.builtin.file:
+    src: /run/systemd/resolve/resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+    force: true
+  become: true
+  notify: Restart systemd-resolved
+
+- name: Free port 53 before starting Pi-hole
+  ansible.builtin.meta: flush_handlers
+
+- name: Create Pi-hole project directory
+  ansible.builtin.file:
+    path: "{{ pihole_base_directory }}"
+    state: directory
+    owner: "{{ pihole_user }}"
+    group: "{{ pihole_user }}"
+    mode: "0755"
+  become: true
+
+- name: Deploy Pi-hole compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ pihole_base_directory }}/compose.yaml"
+    owner: "{{ pihole_user }}"
+    group: "{{ pihole_user }}"
+    mode: "0644"
+  become: true
+
+- name: Start Pi-hole
+  community.docker.docker_compose_v2:
+    project_src: "{{ pihole_base_directory }}"
+    state: present
+    pull: missing
+    remove_orphans: true
+  become: true
+
+- name: Wait for Pi-hole to answer DNS
+  ansible.builtin.wait_for:
+    port: 53
+    host: 127.0.0.1
+    timeout: 120
+
+- name: Wait for the Pi-hole web interface
+  ansible.builtin.wait_for:
+    port: "{{ pihole_http_port }}"
+    host: 127.0.0.1
+    timeout: 120
